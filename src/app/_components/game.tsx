@@ -9,7 +9,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { GRID_SIZE, type Grid, type Shape } from "~/types/game";
+import { type Grid, type Shape } from "~/types/game";
 import { api } from "~/trpc/react";
 
 function DraggableShape({
@@ -38,7 +38,7 @@ function DraggableShape({
       style={style}
       {...listeners}
       {...attributes}
-      className={`flex cursor-move flex-col gap-1 border ${
+      className={`flex cursor-move touch-none flex-col gap-1 border ${
         isSelected ? "border-2 border-red-500" : ""
       }`}
       onClick={onClick}
