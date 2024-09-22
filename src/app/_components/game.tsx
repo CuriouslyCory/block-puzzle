@@ -135,9 +135,9 @@ export function Game() {
           )}
         </div>
         <div className="mb-4 flex justify-center gap-x-4">
-          {shapes.map((shape) => (
+          {shapes.map((shape, shapeIndex) => (
             <DraggableShape
-              key={shape.id}
+              key={`${shape.id}-${shapeIndex}`}
               shape={shape}
               isSelected={selectedShape === shape}
               onClick={() => setSelectedShape(shape)}
