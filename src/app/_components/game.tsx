@@ -56,14 +56,17 @@ export function Game() {
       <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100">
         <h1 className="mb-4 text-4xl font-bold">Shape Fitting Game</h1>
         <div className="mb-4">Score: {score}</div>
-        <div className="mb-4 grid grid-cols-8 gap-1">
+        <div className="mb-4 grid grid-cols-8 gap-1" id="main-game-grid">
           {grid.map((row, y) =>
             row.map((cell, x) => (
               <DroppableCell key={`cell-${x}-${y}`} x={x} y={y} cell={cell} />
             )),
           )}
         </div>
-        <div className="mb-4 flex justify-center gap-x-4">
+        <div
+          className="mb-4 flex justify-center gap-x-4 border-2 p-6"
+          id="shape-inventory"
+        >
           {shapes.map((shape, shapeIndex) => (
             <DraggableShape
               key={`${shape.id}-${shapeIndex}`}

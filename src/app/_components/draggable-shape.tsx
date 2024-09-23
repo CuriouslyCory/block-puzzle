@@ -1,5 +1,5 @@
 import { useDraggable } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
+import { CSS, Transform } from "@dnd-kit/utilities";
 import React from "react";
 import { type GameShape } from "~/types/game";
 
@@ -16,7 +16,6 @@ function areEqual(
   // Re-render only if isSelected or shape properties change
   return (
     prevProps.isSelected === nextProps.isSelected &&
-    prevProps.shape.id === nextProps.shape.id &&
     prevProps.shape.uniqueId === nextProps.shape.uniqueId &&
     prevProps.shape.grid === nextProps.shape.grid
   );
@@ -27,16 +26,17 @@ const DraggableShape = React.memo(function DraggableShape({
   isSelected,
   onClick,
 }: DraggableShapeProps) {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: shape.uniqueId ?? shape.id,
-  });
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: shape.uniqueId,
+    });
 
-  const style = transform
-    ? {
-        transform: CSS.Translate.toString(transform),
-      }
-    : undefined;
-  // console.log("shape", shape);
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform),
+    position: "relative",
+    cursor: "move",
+    touchAction: "none",
+  };
 
   return (
     <div
@@ -44,9 +44,9 @@ const DraggableShape = React.memo(function DraggableShape({
       style={style}
       {...listeners}
       {...attributes}
-      className={`flex cursor-move touch-none flex-col gap-1 ${
+      className={`flex flex-col gap-1 ${
         isSelected ? "border-2 border-red-500" : ""
-      }`}
+      } ${isDragging ? "" : ""}`}
       onClick={onClick}
       role="button"
       tabIndex={0}

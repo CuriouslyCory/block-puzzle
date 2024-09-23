@@ -1,5 +1,5 @@
 import { useDroppable } from "@dnd-kit/core";
-import React from "react";
+import React, { useEffect } from "react";
 
 type DroppableCellProps = {
   x: number;
@@ -23,14 +23,15 @@ const DroppableCell = React.memo(function DroppableCell({
   x,
   y,
   cell,
-}: {
-  x: number;
-  y: number;
-  cell: number;
-}) {
-  const { isOver, setNodeRef } = useDroppable({
+}: DroppableCellProps) {
+  const { isOver, setNodeRef, over } = useDroppable({
     id: `${x}-${y}`,
   });
+
+  // useEffect(() => {
+  //   console.log("over", over);
+
+  // }, [over]);
 
   return (
     <div
