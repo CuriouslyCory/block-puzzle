@@ -38,7 +38,7 @@ function DraggableShape({
       style={style}
       {...listeners}
       {...attributes}
-      className={`flex cursor-move touch-none flex-col gap-1 border ${
+      className={`flex cursor-move touch-none flex-col gap-1 ${
         isSelected ? "border-2 border-red-500" : ""
       }`}
       onClick={onClick}
@@ -56,7 +56,7 @@ function DraggableShape({
           {row.map((cell, cellIndex) => (
             <div
               key={`${rowIndex}-${cellIndex}`}
-              className={`flex h-6 w-6 gap-1 ${cell ? "bg-blue-500" : "bg-white"}`}
+              className={`flex h-6 w-6 gap-1 ${cell ? "bg-blue-500" : "bg-transparent"}`}
             />
           ))}
         </div>
