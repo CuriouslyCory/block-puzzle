@@ -9,7 +9,16 @@ export type Shape = {
   grid: Grid;
 };
 
+export type GameShape = Shape & {
+  uniqueId: string;
+};
+
 export const GRID_SIZE = 8;
+
+export const EMPTY_CELL: Cell = 0;
+export const EMPTY_ROW: Cell[] = Array<Cell>(GRID_SIZE).fill(EMPTY_CELL);
+export const EMPTY_GRID: Grid = Array<Cell[]>(GRID_SIZE).fill(EMPTY_ROW);
+export const CLEARED_GRID_BONUS = 100;
 
 export const SHAPES: Shape[] = [
   {
@@ -59,10 +68,6 @@ export const SHAPES: Shape[] = [
     ],
   },
   {
-    id: "DOT",
-    grid: [[1]],
-  },
-  {
     id: "2x VERT LINE",
     grid: [[1], [1]],
   },
@@ -102,14 +107,6 @@ export const SHAPES: Shape[] = [
     ],
   },
   {
-    id: "T",
-    grid: [
-      [1, 1, 1],
-      [0, 1, 0],
-      [0, 1, 0],
-    ],
-  },
-  {
     id: "Z",
     grid: [
       [0, 1, 1],
@@ -146,3 +143,9 @@ export const CellSchema = z.union([z.literal(0), z.literal(1)]);
 export const GridSchema = z
   .array(z.array(CellSchema).length(GRID_SIZE))
   .length(GRID_SIZE);
+
+export const GameShapeSchema = z.object({
+  id: z.string(),
+  uniqueId: z.string(),
+  grid: z.array(z.array(CellSchema)),
+});

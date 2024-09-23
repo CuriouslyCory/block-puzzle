@@ -1,93 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import {
-  DndContext,
-  useDraggable,
-  useDroppable,
-  DragOverlay,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
-import { type Grid, type Shape } from "~/types/game";
+import React, { useState } from "react";
+import { DndContext, DragOverlay, type DragEndEvent } from "@dnd-kit/core";
+import { EMPTY_GRID, type GameShape, type Grid } from "~/types/game";
 import { api } from "~/trpc/react";
-
-function DraggableShape({
-  shape,
-  isSelected,
-  onClick,
-}: {
-  shape: Shape;
-  isSelected: boolean;
-  onClick: () => void;
-}) {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: shape.id,
-  });
-
-  const style = transform
-    ? {
-        transform: CSS.Translate.toString(transform),
-      }
-    : undefined;
-  // console.log("shape", shape);
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
-      className={`flex cursor-move touch-none flex-col gap-1 ${
-        isSelected ? "border-2 border-red-500" : ""
-      }`}
-      onClick={onClick}
-      role="button"
-      tabIndex={0}
-      aria-label={`Select shape ${shape.id}`}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          onClick();
-        }
-      }}
-    >
-      {shape.grid.map((row, rowIndex) => (
-        <div key={`row-${rowIndex}`} className="flex gap-1">
-          {row.map((cell, cellIndex) => (
-            <div
-              key={`${rowIndex}-${cellIndex}`}
-              className={`flex h-6 w-6 gap-1 ${cell ? "bg-blue-500" : "bg-transparent"}`}
-            />
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function DroppableCell({ x, y, cell }: { x: number; y: number; cell: number }) {
-  const { isOver, setNodeRef } = useDroppable({
-    id: `${x}-${y}`,
-  });
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`h-8 w-8 border ${
-        cell ? "bg-blue-500" : isOver ? "bg-green-200" : "bg-white"
-      }`}
-      role="button"
-      tabIndex={0}
-      aria-label={`Grid cell at row ${y + 1}, column ${x + 1}`}
-    />
-  );
-}
+import DraggableShape from "./draggable-shape";
+import DroppableCell from "./droppable-cell";
 
 export function Game() {
-  const [grid, setGrid] = useState<Grid>([]);
-  const [shapes, setShapes] = useState<Shape[]>([]);
+  const [grid, setGrid] = useState<Grid>(structuredClone(EMPTY_GRID));
+  const [shapes, setShapes] = useState<GameShape[]>([]);
   const [score, setScore] = useState(0);
-  const [selectedShape, setSelectedShape] = useState<Shape | null>(null);
+  const [selectedShape, setSelectedShape] = useState<GameShape | null>(null);
   const [isGameOver, setIsGameOver] = useState(false);
 
   const newGame = api.game.newGame.useMutation({
@@ -118,7 +42,12 @@ export function Game() {
         return;
       }
       const shapeId = active.id.toString();
-      placeShape.mutate({ shapeId, position: { x, y }, grid });
+      placeShape.mutate({
+        shapeId,
+        position: { x, y },
+        grid,
+        remainingShapes: shapes,
+      });
     }
   };
 
@@ -130,7 +59,7 @@ export function Game() {
         <div className="mb-4 grid grid-cols-8 gap-1">
           {grid.map((row, y) =>
             row.map((cell, x) => (
-              <DroppableCell key={`${x}-${y}`} x={x} y={y} cell={cell} />
+              <DroppableCell key={`cell-${x}-${y}`} x={x} y={y} cell={cell} />
             )),
           )}
         </div>
@@ -156,7 +85,7 @@ export function Game() {
       </div>
       <DragOverlay>
         {selectedShape && (
-          <div className="grid grid-cols-4 grid-rows-4 gap-1 opacity-50">
+          <div className="grid grid-cols-4 grid-rows-4 gap-1">
             {selectedShape.grid.map((row, rowIndex) =>
               row.map((cell, cellIndex) => (
                 <div

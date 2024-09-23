@@ -1,23 +1,25 @@
 import { z } from "zod";
-
+import { v4 as uuidv4 } from "uuid";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import {
   type Cell,
+  CLEARED_GRID_BONUS,
+  EMPTY_CELL,
+  EMPTY_GRID,
+  EMPTY_ROW,
+  type GameShape,
+  GameShapeSchema,
   type Grid,
   GRID_SIZE,
   GridSchema,
   type Shape,
   SHAPES,
 } from "~/types/game";
-
-const EMPTY_CELL: Cell = 0;
-const EMPTY_ROW: Cell[] = Array<Cell>(GRID_SIZE).fill(EMPTY_CELL);
-const EMPTY_GRID: Grid = Array<Cell[]>(GRID_SIZE).fill(EMPTY_ROW);
-const CLEARED_GRID_BONUS = 100;
+import { TRPCError } from "@trpc/server";
 
 export const gameRouter = createTRPCRouter({
   newGame: protectedProcedure.mutation(() => {
-    const emptyGrid = EMPTY_GRID;
+    const emptyGrid = structuredClone(EMPTY_GRID);
     const shapes = getRandomShapes(3);
     return { grid: emptyGrid, shapes, score: 0 };
   }),
@@ -27,27 +29,49 @@ export const gameRouter = createTRPCRouter({
       z.object({
         shapeId: z.string(),
         position: z.object({ x: z.number(), y: z.number() }),
-        grid: z.array(z.array(z.union([z.literal(0), z.literal(1)]))),
+        grid: GridSchema,
+        remainingShapes: z.array(GameShapeSchema),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { shapeId, position, grid } = input;
-      const shape = SHAPES.find((s) => s.id === shapeId);
+      const { shapeId, position, grid, remainingShapes } = input;
+      const shape = remainingShapes.find((s) => s.uniqueId === shapeId);
       if (!shape) throw new Error("Invalid shape");
+      let newGrid: Grid | null = null;
+      try {
+        newGrid = placeShapeOnGrid(grid, shape, position);
+      } catch (error) {
+        let message: string;
+        if (error instanceof Error) {
+          message = error.message;
+        } else {
+          message = "Invalid placement";
+        }
+        throw new TRPCError({
+          message,
+          code: "BAD_REQUEST",
+        });
+      }
 
-      const newGrid = placeShapeOnGrid(grid, shape, position);
       const { clearedGrid, clearedLines } = clearFullLines(newGrid);
       const score =
         calculateScore(clearedLines) +
         (isGridEmpty(clearedGrid) ? CLEARED_GRID_BONUS : 0);
-      const shapes = getRandomShapes(3);
+
+      // Remove the placed shape from remainingShapes
+      const updatedShapes = remainingShapes.filter(
+        (s) => s.uniqueId !== shapeId,
+      );
+
+      // Only add new shapes if all initial shapes have been played
+      const shapes =
+        updatedShapes.length === 0 ? getRandomShapes(3) : updatedShapes;
 
       const isGameOver = !shapes.some((shape) =>
         canPlaceShape(clearedGrid, shape),
       );
 
       if (isGameOver) {
-        // Save the game result
         await ctx.db.gameResult.create({
           data: {
             userId: ctx.session.user.id,
@@ -65,7 +89,7 @@ function isGridEmpty(grid: Grid): boolean {
   return grid.every((row) => row.every((cell) => cell === 0));
 }
 
-function getRandomShapes(count: number): Shape[] {
+function getRandomShapes(count: number): GameShape[] {
   return Array(count)
     .fill(null)
     .map(() => {
@@ -73,21 +97,32 @@ function getRandomShapes(count: number): Shape[] {
       if (!SHAPES[randomIndex]) {
         throw new Error("Invalid shape");
       }
-      return SHAPES[randomIndex];
+      const shape = SHAPES[randomIndex];
+      return {
+        ...shape,
+        uniqueId: uuidv4(),
+      };
     });
 }
 
+/**
+ *
+ * @param grid - current game grid
+ * @param shape - shape to place on the grid
+ * @param position - Where on the grid to place the shape
+ * @returns { Grid } grid - Updated grid with the shape placed on it
+ * @throws { Error } - If the shape cannot be placed on the grid
+ */
 function placeShapeOnGrid(
   grid: Grid,
-  shape: Shape,
+  shape: GameShape,
   position: { x: number; y: number },
 ): Grid {
   try {
     const parsedGrid = GridSchema.parse(grid);
     const newGrid = structuredClone(parsedGrid);
     if (!isValidPlacement(grid, shape, position)) {
-      console.warn("Invalid placement");
-      return newGrid;
+      throw new Error("Invalid placement");
     }
     for (let y = 0; y < shape.grid.length; y++) {
       for (let x = 0; x < shape.grid[y]!.length; x++) {
@@ -113,7 +148,6 @@ function clearFullLines(grid: Grid): {
   clearedGrid: Grid;
   clearedLines: number;
 } {
-  console.log("current grid", grid);
   const parsedGrid = GridSchema.parse(grid);
 
   // Find and record the index of any full row
@@ -136,19 +170,14 @@ function clearFullLines(grid: Grid): {
   const clearedLines = fullRows.length + fullColumns.length;
 
   // remove the full rows
-  const clearedGrid = structuredClone(parsedGrid);
-  fullRows.forEach((row) => {
-    clearedGrid.splice(row, 1);
-    clearedGrid.unshift(EMPTY_ROW);
-  });
+  const rowsRemoved = parsedGrid.map((row, rowIndex) =>
+    fullRows.includes(rowIndex) ? EMPTY_ROW : row,
+  );
 
   // remove the full columns
-  fullColumns.forEach((col) => {
-    clearedGrid.forEach((row) => {
-      row.splice(col, 1);
-      row.unshift(EMPTY_CELL);
-    });
-  });
+  const clearedGrid = rowsRemoved.map((row) =>
+    row.map((cell, colIndex) => (fullColumns.includes(colIndex) ? 0 : cell)),
+  );
 
   return { clearedGrid, clearedLines };
 }
@@ -159,7 +188,7 @@ function calculateScore(clearedLines: number): number {
 }
 
 // Is there any way this shape can be placed on the current grid?
-function canPlaceShape(grid: Grid, shape: Shape): boolean {
+function canPlaceShape(grid: Grid, shape: GameShape): boolean {
   for (let y = 0; y <= GRID_SIZE - shape.grid.length; y++) {
     for (let x = 0; x <= GRID_SIZE - shape.grid[0]!.length; x++) {
       if (isValidPlacement(grid, shape, { x, y })) {
@@ -173,7 +202,7 @@ function canPlaceShape(grid: Grid, shape: Shape): boolean {
 // Does the shape fit in the grid at the given position without overlapping with filled cells?
 function isValidPlacement(
   grid: Grid,
-  shape: Shape,
+  shape: GameShape,
   position: { x: number; y: number },
 ): boolean {
   // For each cell in the shape, check if it overlaps with a filled cell in the grid
