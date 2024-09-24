@@ -43,7 +43,6 @@ export function topLeftCollisionDetection({
   collisionRect,
   droppableRects,
   droppableContainers,
-  ...args
 }: CollsionArgs) {
   const centerRect = centerOfRectangle(
     collisionRect,

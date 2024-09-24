@@ -7,7 +7,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { EMPTY_GRID, SHAPES, type GameShape, type Grid } from "~/types/game";
+import { EMPTY_GRID, type GameShape, type Grid } from "~/types/game";
 import { api } from "~/trpc/react";
 import DraggableShape from "./draggable-shape";
 import DroppableCell from "./droppable-cell";
