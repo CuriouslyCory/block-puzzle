@@ -11,7 +11,8 @@ import { EMPTY_GRID, type GameShape, type Grid } from "~/types/game";
 import { api } from "~/trpc/react";
 import DraggableShape from "./draggable-shape";
 import DroppableCell from "./droppable-cell";
-import { snapToTop } from "../utils/snapModifier";
+import { snapToBottom } from "../utils/snapToBottomModifier";
+import { topLeftCollisionDetection } from "../utils/topLeftCollisionDetection";
 
 export function Game() {
   const [grid, setGrid] = useState<Grid>(structuredClone(EMPTY_GRID));
@@ -64,13 +65,14 @@ export function Game() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100">
+    <div className="flex flex-col items-center justify-center">
       <h1 className="mb-4 text-4xl font-bold">Shape Fitting Game</h1>
       <div className="mb-4">Score: {score}</div>
       <DndContext
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
-        modifiers={[snapToTop]}
+        modifiers={[snapToBottom]}
+        collisionDetection={topLeftCollisionDetection}
       >
         <div className="mb-4 grid grid-cols-8 gap-1" id="main-game-grid">
           {grid.map((row, y) =>

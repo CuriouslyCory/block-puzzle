@@ -5,8 +5,8 @@ import { getServerAuthSession } from "~/server/auth";
 export default async function Home() {
   const session = await getServerAuthSession();
   return (
-    <main>
-      <header className="my-2 flex items-center justify-end gap-1 md:mx-4">
+    <main className="min-h-screen bg-gray-100">
+      <header className="flex items-center justify-end gap-1 bg-white py-2 md:mx-4">
         <span className="">
           {session && <span>Logged in as {session.user?.name}</span>}
         </span>

@@ -1,7 +1,7 @@
 import { type Modifier } from "@dnd-kit/core";
 import { getEventCoordinates } from "@dnd-kit/utilities";
 
-export const snapToTop: Modifier = ({
+export const snapToBottom: Modifier = ({
   activatorEvent,
   draggingNodeRect,
   transform,
