@@ -1,5 +1,5 @@
 import { useDraggable } from "@dnd-kit/core";
-import { CSS, Transform } from "@dnd-kit/utilities";
+import { CSS } from "@dnd-kit/utilities";
 import React from "react";
 import { type GameShape } from "~/types/game";
 
@@ -29,10 +29,16 @@ const DraggableShape = React.memo(function DraggableShape({
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: shape.uniqueId,
+      data: { shape },
     });
 
   const style: React.CSSProperties = {
-    transform: CSS.Translate.toString(transform),
+    transform: CSS.Translate.toString({
+      x: transform?.x ?? 0,
+      y: transform?.y ?? 0,
+      scaleX: 1,
+      scaleY: 1,
+    }),
     position: "relative",
     cursor: "move",
     touchAction: "none",
@@ -44,9 +50,9 @@ const DraggableShape = React.memo(function DraggableShape({
       style={style}
       {...listeners}
       {...attributes}
-      className={`flex flex-col gap-1 ${
-        isSelected ? "border-2 border-red-500" : ""
-      } ${isDragging ? "" : ""}`}
+      className={`flex flex-col gap-1 border ${
+        isSelected ? "opacity-50" : ""
+      } ${isDragging ? "dragging" : ""}`}
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -61,7 +67,7 @@ const DraggableShape = React.memo(function DraggableShape({
         <div key={`row-${rowIndex}`} className="flex gap-1">
           {row.map((cell, cellIndex) => (
             <div
-              key={`${rowIndex}-${cellIndex}`}
+              key={`shape-cell-${rowIndex}-${cellIndex}`}
               className={`flex h-8 w-8 gap-1 ${cell ? "bg-blue-500" : "bg-transparent"}`}
             />
           ))}
