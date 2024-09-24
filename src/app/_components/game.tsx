@@ -4,25 +4,14 @@ import React, { useState } from "react";
 import {
   DndContext,
   DragOverlay,
-  type Modifier,
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { createSnapModifier, snapCenterToCursor } from "@dnd-kit/modifiers";
 import { EMPTY_GRID, type GameShape, type Grid } from "~/types/game";
 import { api } from "~/trpc/react";
 import DraggableShape from "./draggable-shape";
 import DroppableCell from "./droppable-cell";
 import { snapToTop } from "../utils/snapModifier";
-
-const adjustTranslate: Modifier = ({ transform }) => {
-  return {
-    ...transform,
-    y: transform.y - 80, // Adjust this value to fine-tune the vertical position
-  };
-};
-
-const gridSnapModifier = createSnapModifier(40);
 
 export function Game() {
   const [grid, setGrid] = useState<Grid>(structuredClone(EMPTY_GRID));
