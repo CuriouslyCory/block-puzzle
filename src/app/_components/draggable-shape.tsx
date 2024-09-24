@@ -1,6 +1,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import React from "react";
+import { cn } from "~/lib/utils";
 import { type GameShape } from "~/types/game";
 
 type DraggableShapeProps = {
@@ -50,9 +51,9 @@ const DraggableShape = React.memo(function DraggableShape({
       style={style}
       {...listeners}
       {...attributes}
-      className={`flex flex-col gap-1 border ${
-        isSelected ? "opacity-50" : ""
-      } ${isDragging ? "dragging" : ""}`}
+      className={`flex flex-col gap-1 ${
+        isSelected ? "border-0" : ""
+      } ${isDragging ? "opacity-50" : ""}`}
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -68,7 +69,9 @@ const DraggableShape = React.memo(function DraggableShape({
           {row.map((cell, cellIndex) => (
             <div
               key={`shape-cell-${rowIndex}-${cellIndex}`}
-              className={`flex h-8 w-8 gap-1 ${cell ? "bg-blue-500" : "bg-transparent"}`}
+              className={`flex h-8 w-8 gap-1 ${
+                cell ? cn(shape.color) : "bg-transparent"
+              }`}
             />
           ))}
         </div>

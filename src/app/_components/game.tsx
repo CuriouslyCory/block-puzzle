@@ -7,12 +7,13 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { EMPTY_GRID, type GameShape, type Grid } from "~/types/game";
+import { EMPTY_GRID, SHAPES, type GameShape, type Grid } from "~/types/game";
 import { api } from "~/trpc/react";
 import DraggableShape from "./draggable-shape";
 import DroppableCell from "./droppable-cell";
 import { snapToBottom } from "../utils/snapToBottomModifier";
 import { topLeftCollisionDetection } from "../utils/topLeftCollisionDetection";
+import { placeShapeOnGrid } from "../utils/game-helpers";
 
 export function Game() {
   const [grid, setGrid] = useState<Grid>(structuredClone(EMPTY_GRID));
@@ -31,6 +32,27 @@ export function Game() {
   });
 
   const placeShape = api.game.placeShape.useMutation({
+    onMutate: (data) => {
+      try {
+        const shape = data.remainingShapes.find(
+          (shape) => shape.uniqueId === data.shapeId,
+        );
+        if (!shape) {
+          throw new Error("Shape not found");
+        }
+        try {
+          const newGrid = placeShapeOnGrid(data.grid, shape, data.position);
+          setGrid(newGrid);
+          setShapes((prevShapes) =>
+            prevShapes.filter((shape) => shape.uniqueId !== data.shapeId),
+          );
+        } catch (error) {
+          console.error(error);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    },
     onSuccess: (data) => {
       setGrid(data.grid);
       setShapes(data.shapes);
